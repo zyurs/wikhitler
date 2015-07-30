@@ -6,7 +6,7 @@ use LWP::Simple;
 
 # Variables declarations
 my $start_page = $ARGV[0];
-my $wikipedia = 'https://fr.wikipedia.org';
+my ($wikipedia) = $start_page =~ /(.*)\/wiki\/.*/;
 my $goal_article = "/wiki/Adolf_Hitler";
 my $goal_page = $wikipedia.$goal_article;
 my $max_deep = 3;
@@ -73,7 +73,7 @@ sub search_hitler {
 
 		# Delete the paragraphe part on the link
 		if ($val =~ /(.*)#/) {
-			$val = $val =~ /(.*)#?/;
+			($val) = $val =~ /(.*)#/;
 		}
 
 		# Select commons pages only and add them to the associative array

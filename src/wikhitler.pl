@@ -57,7 +57,7 @@ sub search_page {
 	if ($res =~ /$goal_article/){
 		$find = 1;
 		# Save result in $tres array
-		$tres[$deep+1] = $goal_page;
+		$tres[$deep+1] = article_name($goal_page);
 
 		# Delete old results in $tres tab
 		for my $i ($deep+1 .. $#tres-1) {
@@ -108,7 +108,7 @@ sub search_page {
 		}
 
 		foreach my $keys (keys(%links)) {
-			$tres[$deep+1] = $keys;
+			$tres[$deep+1] = article_name($keys);
 
 			if (search_page($wikipedia.$keys, ($deep+1))) {
 				last;
@@ -119,6 +119,12 @@ sub search_page {
 	
 }
 
+sub article_name {
+	my ($article_link) = @_;
+	($article_link) = $article_link =~ /\/wiki\/(.*$)/s;
+	return $article_link;
+}
+
 #############
 #           #
 # Treatment #
@@ -126,7 +132,7 @@ sub search_page {
 #############
 
 # Initialization of tres array with the start page
-$tres[0] = $start_page;
+($tres[0]) = article_name($start_page); # =~ /\/wiki\/(.*$)/s;
 # start the search begining at the start page
 search_page($start_page, 0); 
 
@@ -138,8 +144,7 @@ print "\n--------------------\n";
 my $step = 0;
 
 foreach my $link (@{$paths[0]}) {
-	my ($l) = $link =~ /\/wiki\/(.*$)/s;
-	print "$step : $l\n";
+	print "$step : $link\n";
 	$step = $step + 1;
 }
 

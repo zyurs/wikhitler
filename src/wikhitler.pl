@@ -119,6 +119,13 @@ sub search_page {
 	
 }
 
+###################################################
+#                                                 #
+# Extract the article name from a link            #
+# Parameter :                                     #
+# 		$article_link : the link to treat #
+#                                                 #
+###################################################
 sub article_name {
 	my ($article_link) = @_;
 	($article_link) = $article_link =~ /\/wiki\/(.*$)/s;

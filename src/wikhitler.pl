@@ -24,16 +24,23 @@ my $max_deep = 3;
 my $page_count = 0;
 # Array where to save one solution
 my @tres = ();
-# Associative array where save all solutions found
+# Array where save all solutions found
 my @paths = ();
+# Blacklist file
+my $blacklist_file = "blacklist.txt";
+# Associative array with all blacklisted links
+my %blacklisted_link = file_to_hash($blacklist_file);
 
 
 #########################################################################
 #                                                                       #
 # Recursive function to search a page through all links in a given page #
-# Parameters :                                                          #
+# Parameters:                                                           #
 #              $current_page : the page to treat                        #
 #              $deep : actual deep of the page                          #
+#                                                                       #
+# Return:                                                               #
+# 	       True if the goal page is found                           #
 #                                                                       #
 #########################################################################
 sub search_page {
@@ -106,12 +113,19 @@ sub search_page {
 				$links{$val} = ();
 			}
 		}
-
+		# For each links found in current page
 		foreach my $keys (keys(%links)) {
+			# Save the link in $tres array
 			$tres[$deep+1] = article_name($keys);
-
-			if (search_page($wikipedia.$keys, ($deep+1))) {
-				last;
+			# If this link is no blacklisted
+			if (!exists($blacklisted_link{$tres[$deep+1]})) {
+				# Search goal page in this link
+				if (search_page($wikipedia.$keys, ($deep+1))) {
+					# If a result is found, it stop searching at that deep
+					last;
+				}
+			}else{
+				print "$tres[$deep+1] is blacklisted\n";
 			}
 		}
 	}
@@ -119,17 +133,71 @@ sub search_page {
 	
 }
 
-###################################################
-#                                                 #
-# Extract the article name from a link            #
-# Parameter :                                     #
-# 		$article_link : the link to treat #
-#                                                 #
-###################################################
+####################################################
+#                                                  #
+# Function to extract the article name from a link #
+# Parameter:                                       #
+# 		$article_link : the link to treat  #
+#                                                  #
+# Return:                                          #
+# 		the article name                   #
+#                                                  #
+####################################################
 sub article_name {
 	my ($article_link) = @_;
 	($article_link) = $article_link =~ /\/wiki\/(.*$)/s;
 	return $article_link;
+}
+
+#############################################
+#                                           #
+# Function to check to a file in the system #
+# If it doesn't exist, it will be created   #
+#                                           #
+# Parameters:                               #
+# 		$file: file name to check   #
+#                                           #
+#############################################
+sub check_file {
+	my ($file) = @_;
+	# If the file doesn't exist
+	if (! -e $file){
+		print "$file file doesn't exist\n";
+		# Creating the file
+		if (open(NEWFILE, ">", $file)or die ("Can't create $file file\n")) {
+			print "$file file created\n";
+			close (NEWFILE);
+		}
+	}
+}
+
+##################################################################
+#                                                                #
+# Function to read a file and parse it into an associative array #
+#                                                                #
+# Parameters:                                                    #
+# 		$file: file name to parse                        #
+#                                                                #
+# Return:                                                        #
+# 		An associative array containing each lines of    #
+#		the file as keys                                 #
+#                                                                #
+##################################################################
+sub file_to_hash {
+	my ($file) = @_;
+	# Check to the file
+	check_file($file);
+	open (FILE, "<", $file) or die("Can't open location file\n");
+	# Associative array where to save the file
+	my %hash = ();
+	# For each lines
+	while (<FILE>) {
+		chomp($_);
+		# Save the line as a key of %hash
+		$hash{$_} = 1;
+	}
+	close (FILE);
+	return %hash;
 }
 
 #############
@@ -156,3 +224,30 @@ foreach my $link (@{$paths[0]}) {
 }
 
 print "\n";
+
+#
+# Blacklisting management
+#
+my $bl_result = "y";
+while ($bl_result eq "y") {
+	print "Blacklist a result (y/n)? : ";
+	$bl_result = <STDIN>;
+	chomp($bl_result);
+	
+	# If user want to blacklist a link
+	if ($bl_result eq "y") {
+		# Link choice to blacklist
+		print ("Number of the result: ");
+		my $result_number = <STDIN>;
+		# If the number of the link is valid
+		if (exists($paths[0][$result_number])) {
+			open (BLACKLIST, ">>", $blacklist_file) or die("Can't open location file : $!\n");
+			# Add the link to the blacklist
+			if (print (BLACKLIST $paths[0][$result_number]."\n")) {
+				print "$paths[0][$result_number] blacklisted\n\n";
+			}
+		}else{
+			print "This value doesn't exists\n";
+		}
+	}
+}

@@ -19,7 +19,7 @@ my $goal_article = "/wiki/Adolf_Hitler";
 # The link to the article to search
 my $goal_page = $wikipedia.$goal_article;
 # Maximal deep of search to avoid infinity search
-my $max_deep = 3;
+my $max_deep = 2;
 # Number of visited pages
 my $page_count = 0;
 # Array where to save one solution
@@ -30,6 +30,8 @@ my @paths = ();
 my $blacklist_file = "blacklist.txt";
 # Associative array with all blacklisted links
 my %blacklisted_link = file_to_hash($blacklist_file);
+# Associative array with all links found and their respectively deep
+my %link_historic = ();
 
 
 #########################################################################
@@ -113,6 +115,19 @@ sub search_page {
 				$links{$val} = ();
 			}
 		}
+		# For each links found save it in historic
+		foreach my $keys (keys(%links)) {
+			if (exists($link_historic{$keys}) && $link_historic{$keys}>($deep+1)) {
+				print "Link $keys found less deeper at \($deep+1\)\n";
+				$link_historic{$keys}=($deep+1);
+			}elsif (exists($link_historic{$keys})) {
+				print"$keys already visited\n";
+				delete($links{$keys});
+			}else{
+			#	print "$keys record in historic\n";
+				$link_historic{$keys}=($deep+1);
+			}
+		} 
 		# For each links found in current page
 		foreach my $keys (keys(%links)) {
 			# Save the link in $tres array
@@ -208,6 +223,8 @@ sub file_to_hash {
 
 # Initialization of tres array with the start page
 ($tres[0]) = article_name($start_page); # =~ /\/wiki\/(.*$)/s;
+# Save the start page in the historic with the deep 0
+$link_historic{$tres[0]}=0;
 # start the search begining at the start page
 search_page($start_page, 0); 
 
